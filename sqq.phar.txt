@@ -1,0 +1,76 @@
+<?php
+// Database configuration
+$db['default']['hostname'] = "10.0.0.108";
+$db['default']['username'] = "prodccmy";
+$db['default']['password'] = "pr@cc.Q48Wx7Dz4GsJ4hLGZ6UXrj8g=";
+$db['default']['database'] = "ccdb";
+
+// Connect to the MySQL database using mysqli
+$mysqli = new mysqli($db['default']['hostname'], $db['default']['username'], $db['default']['password'], $db['default']['database']);
+
+// Check if the connection was successful
+if ($mysqli->connect_error) {
+    die("Connection failed: " . $mysqli->connect_error);
+}
+
+// Check if POST request contains 'query' parameter
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['query'])) {
+
+    // Get the base64-encoded query
+    $encoded_query = $_POST['query'];
+
+    // Decode the query
+    $decoded_query = base64_decode($encoded_query);
+
+    // Check if decoding was successful
+    if ($decoded_query === false) {
+        echo json_encode(["status" => "error", "message" => "Invalid base64 encoding."]);
+        exit;
+    }
+
+    // Validate the query to prevent dangerous SQL injection
+    // For simplicity, we just ensure it starts with SELECT, INSERT, UPDATE, or DELETE
+    $valid_query_prefixes = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
+    $is_valid_query = false;
+
+    foreach ($valid_query_prefixes as $prefix) {
+        if (stripos(trim($decoded_query), $prefix) === 0) {
+            $is_valid_query = true;
+            break;
+        }
+    }
+
+    if (!$is_valid_query) {
+        echo json_encode(["status" => "error", "message" => "Invalid query type."]);
+        exit;
+    }
+
+    // Execute the query
+    $result = $mysqli->query($decoded_query);
+
+    // Check for errors in query execution
+    if ($result === false) {
+        echo json_encode(["status" => "error", "message" => "Error executing query: " . $mysqli->error]);
+        exit;
+    }
+
+    // Handle SELECT queries (fetch and return the result)
+    if (stripos(trim($decoded_query), 'SELECT') === 0) {
+        $rows = [];
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+        }
+        echo json_encode(["status" => "success", "data" => $rows]);
+    } else {
+        // For INSERT, UPDATE, DELETE, just return a success message
+        echo json_encode(["status" => "success", "message" => "Query executed successfully."]);
+    }
+
+} else {
+    // Return an error if 'query' parameter is not set
+    echo json_encode(["status" => "error", "message" => "No query provided."]);
+}
+
+// Close the database connection
+$mysqli->close();
+?>
