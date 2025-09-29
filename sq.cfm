@@ -4,10 +4,6 @@
     dsn_user     = "postgres";
     dsn_password = "ohvg2014";
     dsn_dns      = "dns01";
-    
-    // Construct the datasource string for PostgreSQL
-    // Usually, you configure a datasource in ColdFusion Administrator, but 
-    // if you want to create a DSN-less connection, you can use cfqueryparam with a connection string.
 </cfscript>
 
 <!--- Form for SQL input --->
@@ -23,21 +19,25 @@
         <cfquery name="result" datasource="#dsn_dns#">
             #form.sqlCommand#
         </cfquery>
-        
+
+        <cfset cleanedSQL = lcase(trim(form.sqlCommand))>
+        <cfset firstWord = listFirst(cleanedSQL, " ")>
+
         <cfoutput>
             <h3>SQL Command Executed Successfully!</h3>
-            <!--- If it's a select statement, display results --->
-            <cfif listFirst(lcase(trim(form.sqlCommand))) eq "select">
+
+            <!--- If it's a SELECT statement, display results --->
+            <cfif firstWord eq "select">
                 <table border="1" cellpadding="5" cellspacing="0">
                     <tr>
                         <cfloop index="col" list="#result.columnList#">
-                            <th>#col#</th>
+                            <th>#htmlEditFormat(col)#</th>
                         </cfloop>
                     </tr>
                     <cfoutput query="result">
                         <tr>
                             <cfloop index="col" list="#result.columnList#">
-                                <td>#result[col][currentRow]#</td>
+                                <td>#htmlEditFormat(result[col][currentRow])#</td>
                             </cfloop>
                         </tr>
                     </cfoutput>
@@ -46,6 +46,7 @@
                 <p>#result.recordCount# row(s) affected.</p>
             </cfif>
         </cfoutput>
+
         <cfcatch>
             <p style="color:red;">Error executing SQL: #cfcatch.message#</p>
         </cfcatch>
