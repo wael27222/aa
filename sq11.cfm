@@ -3,7 +3,7 @@
     dsn_port     = "6432";
     dsn_user     = "postgres";
     dsn_password = "ohvg2014";
-    dsn_dns      = "dns01";
+    dsn_dns      = "db01";
 </cfscript>
 
 
